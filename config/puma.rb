@@ -11,9 +11,14 @@ require_relative 'dotenv'
 # Always load Railway-specific configuration in production
 require_relative 'railway' if ENV['RAILS_ENV'] == 'production'
 
-# Clear any potentially problematic bind configurations immediately
-ENV.delete('PUMA_BIND') if ENV['PUMA_BIND']&.include?('$')
-ENV.delete('PUMA_BIND_TO') if ENV['PUMA_BIND_TO']&.include?('$')
+# CRITICAL: Clear ALL potentially problematic environment variables
+problematic_vars = %w[PUMA_BIND PUMA_BIND_TO BIND]
+problematic_vars.each { |var| ENV.delete(var) }
+
+# Also clear any environment variable that contains '$PORT'
+ENV.keys.each do |key|
+  ENV.delete(key) if ENV[key]&.include?('$PORT')
+end
 
 max_threads_count = ENV.fetch('RAILS_MAX_THREADS', 15)
 min_threads_count = ENV.fetch('RAILS_MIN_THREADS') { max_threads_count }
@@ -27,9 +32,26 @@ worker_timeout 3600 if ENV.fetch('RAILS_ENV', 'development') == 'development'
 # Specifies the binding address and port for Puma
 # This configuration handles deployment platforms like Railway, Heroku, etc.
 
-# CRITICAL: Clear ALL potentially problematic bind configurations
-ENV.keys.select { |k| k.include?('BIND') || k.include?('PUMA') }.each do |key|
-  ENV.delete(key) if ENV[key]&.include?('$PORT')
+# EMERGENCY FIX: Force simple configuration
+if ENV['RAILS_ENV'] == 'production'
+  puts "=== EMERGENCY: Using forced simple configuration ==="
+  
+  # Clear everything and use minimal config
+  @options = {}
+  
+  threads 15, 15
+  workers 0
+  environment 'production'
+  pidfile false
+  
+  # Safe port handling
+  safe_port = ENV['PORT']&.match?(/\A\d+\z/) ? ENV['PORT'].to_i : 8080
+  bind "tcp://0.0.0.0:#{safe_port}"
+  
+  puts "Forced binding to 0.0.0.0:#{safe_port}"
+  
+  # Skip the rest of the configuration
+  return
 end
 
 port_env = ENV['PORT']
@@ -82,10 +104,14 @@ end
 #
 # preload_app!
 
-if ENV['MULTITENANT'] != 'true' || ENV['DEMO'] == 'true'
-  require_relative '../lib/puma/plugin/redis_server'
-  require_relative '../lib/puma/plugin/sidekiq_embed'
+# Temporarily disable plugins to isolate the PORT issue
+# TODO: Re-enable after fixing PORT problem
+# if ENV['MULTITENANT'] != 'true' || ENV['DEMO'] == 'true'
+#   require_relative '../lib/puma/plugin/redis_server'
+#   require_relative '../lib/puma/plugin/sidekiq_embed'
+# 
+#   plugin :sidekiq_embed
+#   plugin :redis_server
+# end
 
-  plugin :sidekiq_embed
-  plugin :redis_server
-end
+puts "=== Plugins disabled temporarily to fix PORT issue ==="
