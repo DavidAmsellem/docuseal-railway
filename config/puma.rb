@@ -54,9 +54,6 @@ else
   port app_port
 end
 
-# Ensure no conflicting port configuration
-undef_method :port if respond_to?(:port) && ENV['RAILS_ENV'] == 'production'
-
 # Specifies the `environment` that Puma will run in.
 #
 environment ENV.fetch('RAILS_ENV', 'development')
