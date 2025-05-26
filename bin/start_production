@@ -1,38 +1,49 @@
 #!/bin/bash
 
-echo "=== DocuSeal Production Startup ==="
+echo "=== DocuSeal Production Startup - RAILWAY BYPASS MODE ==="
 echo "RAILS_ENV: $RAILS_ENV"
 echo "Original PORT: $PORT"
 
-# Clean up any problematic environment variables
+# CRITICAL: Clear ALL environment variables that could interfere with Puma
 unset PUMA_BIND
+unset PUMA_BIND_TO
 unset PUMA_PORT
 unset BIND
+unset WEB_CONCURRENCY
+unset WORKERS
+
+# Clear any environment variable that might contain $PORT
+for var in $(env | grep '\$PORT' | cut -d= -f1); do
+    echo "Clearing problematic variable: $var"
+    unset $var
+done
 
 # Handle the PORT variable more carefully
 if [ -z "$PORT" ] || [ "$PORT" = '$PORT' ] || ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
-    echo "WARNING: PORT is not set correctly, using default 3000"
-    export PORT=3000
+    echo "WARNING: PORT is not set correctly, using default 8080"
+    export PORT=8080
 fi
 
-echo "Cleaned PORT: $PORT"
+echo "Final PORT: $PORT"
 echo "HOST: $HOST"
-
-# Check for any remaining problematic environment variables
-env | grep -E '(PUMA|BIND)' || echo "No problematic PUMA/BIND variables found"
-
-echo "==================================="
 
 # Set RAILS_ENV if not set
 export RAILS_ENV=${RAILS_ENV:-production}
 
-# Determine which Puma configuration to use
-if [ -f "/app/config/puma_simple.rb" ] && ([ "$USE_SIMPLE_PUMA" = "true" ] || [ -z "$DATABASE_URL" ]); then
-    echo "Using simplified Puma configuration (USE_SIMPLE_PUMA=$USE_SIMPLE_PUMA, DATABASE_URL presence: $([ -n "$DATABASE_URL" ] && echo 'YES' || echo 'NO'))"
-    exec bundle exec puma -C /app/config/puma_simple.rb
-else
-    echo "Using standard Puma configuration"
-    # Clear any problematic bind configurations before starting
-    unset PUMA_BIND_TO
-    exec bundle exec puma -C /app/config/puma.rb
-fi
+# FORCE simple configuration - BYPASS main puma.rb completely
+echo "=== BYPASSING main puma.rb - Using simple config only ==="
+echo "This avoids any potential Railway configuration conflicts"
+
+# EMERGENCY DEBUG: Show ALL environment variables that might be problematic
+echo "=== FULL ENVIRONMENT ANALYSIS ==="
+env | grep -i port || echo "No PORT variables"
+env | grep -i puma || echo "No PUMA variables"  
+env | grep -i bind || echo "No BIND variables"
+env | grep -i railway || echo "No RAILWAY variables"
+echo "=================================="
+
+# NUCLEAR OPTION: Use simple configuration ALWAYS in production
+echo "=== NUCLEAR OPTION: Bypassing ALL potential conflicts ==="
+
+# Start Puma with MAXIMUM verbosity to see what's happening
+bundle exec puma -C /app/config/puma_simple.rb --verbose --debug

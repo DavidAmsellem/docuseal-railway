@@ -1,33 +1,55 @@
-# Simplified Puma configuration for Railway deployment
-# This configuration avoids complex environment variable handling
+# RAILWAY BYPASS MODE - Simplified Puma configuration
+# This configuration completely bypasses potential Railway conflicts
 
+puts "=== RAILWAY BYPASS MODE - Simple Puma Configuration ==="
+
+# CRITICAL: Clear ALL Puma-related environment variables immediately
+%w[PUMA_BIND PUMA_BIND_TO PUMA_PORT BIND WEB_CONCURRENCY WORKERS].each do |var|
+  if ENV[var]
+    puts "Clearing: #{var}=#{ENV[var]}"
+    ENV.delete(var)
+  end
+end
+
+# Clear any variable containing $PORT
+ENV.keys.select { |k| ENV[k]&.include?('$PORT') }.each do |key|
+  puts "Clearing problematic variable: #{key}=#{ENV[key]}"
+  ENV.delete(key)
+end
+
+# Basic Puma configuration
 threads 15, 15
 workers 0
+environment ENV.fetch('RAILS_ENV', 'production')
 
-# Clean port configuration - handle Railway's PORT variable
-port_string = ENV['PORT'].to_s
+# Super safe port handling
+port_string = ENV['PORT'].to_s.strip
 port_number = if port_string.empty? || port_string == '$PORT' || !port_string.match?(/\A\d+\z/)
-                3000
+                puts "PORT issue detected: '#{port_string}' - using fallback 8080"
+                8080
               else
                 port_string.to_i
               end
 
-# Always bind to 0.0.0.0 in production for external access
-bind "tcp://0.0.0.0:#{port_number}"
+puts "Final port number: #{port_number}"
 
-environment ENV.fetch('RAILS_ENV', 'production')
+# Simple, direct bind - no variables, no interpolation issues
+case port_number
+when 8080
+  bind "tcp://0.0.0.0:8080"
+when 3000
+  bind "tcp://0.0.0.0:3000"  
+when 5000
+  bind "tcp://0.0.0.0:5000"
+else
+  # For any other port, use string concatenation to avoid interpolation issues
+  bind_string = "tcp://0.0.0.0:" + port_number.to_s
+  bind bind_string
+end
 
-# Disable pidfile
+# Disable pidfile explicitly
 pidfile false
 
-# Allow more time for workers in development
-worker_timeout 3600 if ENV.fetch('RAILS_ENV', 'production') == 'development'
-
-# Clear any problematic bind configurations
-ENV.delete('PUMA_BIND')
-ENV.delete('PUMA_BIND_TO')
-
-puts "=== Simplified Puma Configuration ==="
 puts "Binding to 0.0.0.0:#{port_number}"
 puts "Environment: #{ENV.fetch('RAILS_ENV', 'production')}"
-puts "======================================"
+puts "=== Simple Configuration Complete ==="
