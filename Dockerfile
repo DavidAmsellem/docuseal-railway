@@ -79,7 +79,7 @@ COPY ./tmp ./tmp
 COPY LICENSE README.md Rakefile config.ru .version ./
 COPY .version ./public/version
 
-COPY --from=download /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts
+COPY --from=download /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts/
 COPY --from=download /fonts/FreeSans.ttf /usr/share/fonts/freefont
 COPY --from=download /pdfium-linux/lib/libpdfium.so /usr/lib/libpdfium.so
 COPY --from=download /pdfium-linux/licenses/pdfium.txt /usr/lib/libpdfium-LICENSE.txt
@@ -87,9 +87,10 @@ COPY --from=webpack /app/public/packs ./public/packs
 
 RUN ln -s /fonts /app/public/fonts
 RUN bundle exec bootsnap precompile --gemfile app/ lib/
+RUN chmod +x /app/bin/start_production
 
 ENV WORKDIR=/data/docuseal
 
 EXPOSE 3000
-CMD ["bundle", "exec", "puma", "-C", "/app/config/puma.rb"]
+CMD ["/app/bin/start_production"]
 

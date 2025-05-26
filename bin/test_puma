@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "=== Testing Puma Configuration ==="
+
+# Test with problematic PORT value
+export PORT='$PORT'
+export RAILS_ENV=production
+
+echo "Testing with PORT='$PORT' (problematic case)"
+bundle exec puma -C config/puma.rb --dry-run 2>&1 | head -10
+
+echo ""
+echo "Testing with cleaned PORT"
+export PORT=3000
+bundle exec puma -C config/puma.rb --dry-run 2>&1 | head -10
+
+echo ""
+echo "Testing simplified configuration"
+bundle exec puma -C config/puma_simple.rb --dry-run 2>&1 | head -10
+
+echo "=== Test Complete ==="

@@ -1,0 +1,1 @@
+web: RAILWAY_DEBUG=true /app/bin/start_production

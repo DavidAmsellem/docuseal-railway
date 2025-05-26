@@ -8,6 +8,9 @@
 
 require_relative 'dotenv'
 
+# Always load Railway-specific configuration in production
+require_relative 'railway' if ENV['RAILS_ENV'] == 'production'
+
 max_threads_count = ENV.fetch('RAILS_MAX_THREADS', 15)
 min_threads_count = ENV.fetch('RAILS_MIN_THREADS') { max_threads_count }
 threads min_threads_count, max_threads_count
@@ -17,13 +20,22 @@ threads min_threads_count, max_threads_count
 #
 worker_timeout 3600 if ENV.fetch('RAILS_ENV', 'development') == 'development'
 
-# Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-#
-port ENV.fetch('PORT', 3000)
+# Specifies the binding address and port for Puma
+# This configuration handles deployment platforms like Railway, Heroku, etc.
+port_env = ENV['PORT']
 
-# For deployment platforms like Railway, Heroku, etc., bind to 0.0.0.0
-if ENV['PORT']
-  bind "tcp://0.0.0.0:#{ENV['PORT']}"
+# Validate and clean the PORT environment variable
+if port_env && port_env != '$PORT' && port_env.match?(/\A\d+\z/)
+  app_port = port_env.to_i
+else
+  app_port = 3000
+end
+
+# For production environments, bind to 0.0.0.0 to accept external connections
+if ENV['RAILS_ENV'] == 'production'
+  bind "tcp://0.0.0.0:#{app_port}"
+else
+  port app_port
 end
 
 # Specifies the `environment` that Puma will run in.

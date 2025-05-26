@@ -1,0 +1,36 @@
+#!/bin/bash
+
+echo "=== DocuSeal Production Startup ==="
+echo "RAILS_ENV: $RAILS_ENV"
+echo "Original PORT: $PORT"
+
+# Clean up any problematic environment variables
+unset PUMA_BIND
+unset PUMA_PORT
+unset BIND
+
+# Handle the PORT variable more carefully
+if [ -z "$PORT" ] || [ "$PORT" = '$PORT' ] || ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
+    echo "WARNING: PORT is not set correctly, using default 3000"
+    export PORT=3000
+fi
+
+echo "Cleaned PORT: $PORT"
+echo "HOST: $HOST"
+
+# Check for any remaining problematic environment variables
+env | grep -E '(PUMA|BIND)' || echo "No problematic PUMA/BIND variables found"
+
+echo "==================================="
+
+# Set RAILS_ENV if not set
+export RAILS_ENV=${RAILS_ENV:-production}
+
+# Start Puma with fallback configuration
+if [ -f "/app/config/puma_simple.rb" ] && [ "$USE_SIMPLE_PUMA" = "true" ]; then
+    echo "Using simplified Puma configuration"
+    exec bundle exec puma -C /app/config/puma_simple.rb
+else
+    echo "Using standard Puma configuration"
+    exec bundle exec puma -C /app/config/puma.rb
+fi
