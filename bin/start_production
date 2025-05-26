@@ -26,11 +26,13 @@ echo "==================================="
 # Set RAILS_ENV if not set
 export RAILS_ENV=${RAILS_ENV:-production}
 
-# Start Puma with fallback configuration
-if [ -f "/app/config/puma_simple.rb" ] && [ "$USE_SIMPLE_PUMA" = "true" ]; then
-    echo "Using simplified Puma configuration"
+# Determine which Puma configuration to use
+if [ -f "/app/config/puma_simple.rb" ] && ([ "$USE_SIMPLE_PUMA" = "true" ] || [ -z "$DATABASE_URL" ]); then
+    echo "Using simplified Puma configuration (USE_SIMPLE_PUMA=$USE_SIMPLE_PUMA, DATABASE_URL presence: $([ -n "$DATABASE_URL" ] && echo 'YES' || echo 'NO'))"
     exec bundle exec puma -C /app/config/puma_simple.rb
 else
     echo "Using standard Puma configuration"
+    # Clear any problematic bind configurations before starting
+    unset PUMA_BIND_TO
     exec bundle exec puma -C /app/config/puma.rb
 fi

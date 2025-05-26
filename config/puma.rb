@@ -11,6 +11,10 @@ require_relative 'dotenv'
 # Always load Railway-specific configuration in production
 require_relative 'railway' if ENV['RAILS_ENV'] == 'production'
 
+# Clear any potentially problematic bind configurations immediately
+ENV.delete('PUMA_BIND') if ENV['PUMA_BIND']&.include?('$')
+ENV.delete('PUMA_BIND_TO') if ENV['PUMA_BIND_TO']&.include?('$')
+
 max_threads_count = ENV.fetch('RAILS_MAX_THREADS', 15)
 min_threads_count = ENV.fetch('RAILS_MIN_THREADS') { max_threads_count }
 threads min_threads_count, max_threads_count
@@ -22,6 +26,12 @@ worker_timeout 3600 if ENV.fetch('RAILS_ENV', 'development') == 'development'
 
 # Specifies the binding address and port for Puma
 # This configuration handles deployment platforms like Railway, Heroku, etc.
+
+# CRITICAL: Clear ALL potentially problematic bind configurations
+ENV.keys.select { |k| k.include?('BIND') || k.include?('PUMA') }.each do |key|
+  ENV.delete(key) if ENV[key]&.include?('$PORT')
+end
+
 port_env = ENV['PORT']
 
 # Validate and clean the PORT environment variable
@@ -31,12 +41,21 @@ else
   app_port = 3000
 end
 
+puts "=== Puma Configuration Debug ==="
+puts "PORT environment variable: #{port_env.inspect}"
+puts "Computed app_port: #{app_port}"
+puts "RAILS_ENV: #{ENV['RAILS_ENV']}"
+puts "==============================="
+
 # For production environments, bind to 0.0.0.0 to accept external connections
 if ENV['RAILS_ENV'] == 'production'
   bind "tcp://0.0.0.0:#{app_port}"
 else
   port app_port
 end
+
+# Ensure no conflicting port configuration
+undef_method :port if respond_to?(:port) && ENV['RAILS_ENV'] == 'production'
 
 # Specifies the `environment` that Puma will run in.
 #
