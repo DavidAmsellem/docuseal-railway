@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Railway Configuration Script for DocuSeal
+# Run this script to add the recommended environment variables to your Railway project
+
+echo "=== Railway Configuration for DocuSeal ==="
+echo ""
+echo "Current variables in Railway:"
+echo "✅ RAILS_ENV=production"
+echo "✅ SECRET_KEY_BASE=[CONFIGURED]"
+echo ""
+echo "Please add these additional variables to your Railway project:"
+echo ""
+echo "REQUIRED FOR PUMA FIX:"
+echo "USE_SIMPLE_PUMA=true"
+echo ""
+echo "RECOMMENDED:"
+echo "FORCE_SSL=true"
+echo "RAILWAY_DEBUG=true"
+echo ""
+echo "To add these variables:"
+echo "1. Go to your Railway project dashboard"
+echo "2. Click on 'Variables' tab"
+echo "3. Add each variable with its value"
+echo "4. Deploy again"
+echo ""
+echo "After successful deployment, you can remove RAILWAY_DEBUG"
+echo ""
+echo "=== Configuration Complete ==="

@@ -1,0 +1,29 @@
+# Railway Environment Configuration
+# Add these variables to your Railway project
+
+# Required variables (you already have these):
+# RAILS_ENV=production
+# SECRET_KEY_BASE=353282fad801eba61070d57998b66de32af5a85597161a4efc4344d262ce65df25ef4fd8562261c1ef7f5c2fb317e46872f2299acba1153cbdf9b70f5ad5b731
+
+# Additional recommended variables for Railway:
+
+# Force simple Puma configuration (recommended for initial deployment)
+USE_SIMPLE_PUMA=true
+
+# Database configuration (Railway provides DATABASE_URL automatically, but you can override if needed)
+# DATABASE_URL will be provided automatically by Railway
+
+# Optional: Set a custom host if you have a custom domain
+# HOST=your-custom-domain.com
+
+# Optional: Force SSL in production
+FORCE_SSL=true
+
+# Optional: Redis configuration (will be auto-configured if not provided)
+# REDIS_URL will be auto-configured if you add Redis service
+
+# Optional: File storage configuration
+# ACTIVE_STORAGE_PUBLIC=true
+
+# Debug configuration (remove after successful deployment)
+RAILWAY_DEBUG=true
